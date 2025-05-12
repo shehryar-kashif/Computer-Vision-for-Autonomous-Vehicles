@@ -324,28 +324,60 @@ def get_extreme_coord(bound_box):
     xr, yr, wr, hr = right_most
 
     return yl, hl, xl, yr, hr, xr+wr
+    
 
-vid = cv2.VideoCapture("D:\\NUST\\6th Semester\\DIP\\Project\\Dataset\\WhatsApp Video 2025-05-12 at 2.11.09 PM.mp4")
+'''Raspberry Pi Block'''
+picam2 = Picamera2()
+picam2.preview_configuration.main.size = (640, 480)  
+picam2.preview_configuration.main.format = "BGR888"  
+picam2.configure("preview")
+picam2.start()
 
-while vid.isOpened():
-    # Frame Capture and Resizing
-    ret, frame = vid.read()
-    frame = cv2.resize(frame, (640, 360))
+# Setup socket server
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind(('0.0.0.0', 8485))  # Listen on all interfaces, port 8485
+server_socket.listen(1)
+print("Waiting for laptop connection...")
+conn, addr = server_socket.accept()
+print(f"Connected by: {addr}")
 
-    # Road and Lane Segmentation
-    img_road = ext_road(frame)
-    img_lanes = ext_lanes(frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV))
+#reducing fps
+fps = 5
+frame_interval = 1/fps
+last_time = time.time()
 
-    # Obstacle Detection
-    img_edges = extract_edges(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
-    img_edges_clean = clean_mask(img_edges)
-    obst_coord = detect_obstacles(img_edges_clean, img_road, frame)
 
-    # Decision-Making
-    make_decision(obst_coord, img_road, frame)
+while True:
+    
+    current_time = time.time()
+    if (current_time - last_time) >= frame_interval:
+        last_time = current_time
+        frame = picam2.capture_array()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)    # back to RGB
 
-    # Visualization
-    cv2.imshow('Frame', frame)
-    cv2.imshow('Road', img_road)
-    # cv2.imshow('Lanes', img_lanes)
-    cv2.waitKey()
+        # q to quit
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        img_road = ext_road(frame)
+        img_lanes = ext_lanes(frame, cv2.cvtColor(frame, cv2.COLOR_BGR2HSV))
+
+        # Obstacle Detection
+        img_edges = extract_edges(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+        img_edges_clean = clean_mask(img_edges)
+        obst_coord = detect_obstacles(img_edges_clean, img_road, frame)
+
+        # Decision-Making
+        make_decision(obst_coord, img_road, frame)
+
+        # Visualization
+        cv2.imshow('Frame', frame)
+        cv2.imshow('Road', img_road)
+
+        # Stream via HTTP
+        data = pickle.dumps((frame, img_road))
+        message = struct.pack("Q", len(data)) + data
+        conn.sendall(message)
+
+cv2.destroyAllWindows()
+picam2.stop()
