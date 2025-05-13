@@ -17,7 +17,9 @@ This project implements a real-time **intelligent road navigation system** using
 ```
 .
 ├── Project.py                # Core script for frame processing and decision-making
-├── README.md              # This file
+├── Pi_frames_reciever.py     # Script to connect Pi to Laptop
+├── Demo.mp4                  # Demonstration Video
+├── README.md                 # This file
 ```
 
 ---
@@ -27,6 +29,7 @@ This project implements a real-time **intelligent road navigation system** using
 * Python 3.7+
 * OpenCV (`cv2`)
 * NumPy
+* Raspberry pi 3+
 
 Install dependencies:
 
@@ -65,7 +68,7 @@ pip install opencv-python numpy
 * `MIN_AREA`, `MIN_SOLIDITY`, `MIN_EXTENT`: Filters for valid obstacle contours.
 * `TOLERANCE_TURN`: Threshold to decide turn direction based on road centroid.
 
-Adjust these values in `main.py` for different datasets or camera setups.
+Adjust these values in `Project.py` for different datasets or camera setups.
 
 ---
 
@@ -77,22 +80,6 @@ Adjust these values in `main.py` for different datasets or camera setups.
 * Text overlays indicating navigation decisions
 * Yellow boudning boxes for possible obstacles
 * Green rectangles indicating the region of interest for slowing down and turning
-
----
-
-## 📂 To Run
-
-Update the video path in the code:
-
-```python
-vid = cv2.VideoCapture("path/to/your/video.mp4")
-```
-
-Then simply run:
-
-```bash
-python main.py
-```
 
 ---
 
